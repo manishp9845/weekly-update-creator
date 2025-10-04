@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, History, Settings as SettingsIcon } from 'lucide-react';
+import { Mail, MessageSquare, History, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import { MessageInput } from './components/MessageInput';
 import { MessageList } from './components/MessageList';
 import { EmailGenerator } from './components/EmailGenerator';
 import { EmailHistory } from './components/EmailHistory';
 import { Settings } from './components/Settings';
+import { LoginPage } from './components/LoginPage';
 import { RawMessage, GeneratedEmail } from './types';
 import {
   saveRawMessages,
@@ -20,14 +21,15 @@ import './App.css';
 type TabType = 'messages' | 'generate' | 'history' | 'settings';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('messages');
-  console.log('App.tsx: Current activeTab:', activeTab);
   const [messages, setMessages] = useState<RawMessage[]>([]);
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
   const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
 
   // Load data on component mount
   useEffect(() => {
+    if (!isAuthenticated) return;
     const loadInitialData = async () => {
       try {
         const loadedMessages = await loadRawMessages();
@@ -42,23 +44,37 @@ function App() {
       }
     };
     loadInitialData();
-  }, []);
+  }, [isAuthenticated]);
 
   // Save messages when they change
   useEffect(() => {
+    if (!isAuthenticated) return;
     const saveMessages = async () => {
       await saveRawMessages(messages);
     };
     saveMessages();
-  }, [messages]);
+  }, [messages, isAuthenticated]);
 
   // Save emails when they change
   useEffect(() => {
+    if (!isAuthenticated) return;
     const saveEmails = async () => {
       await saveGeneratedEmails(generatedEmails);
     };
     saveEmails();
-  }, [generatedEmails]);
+  }, [generatedEmails, isAuthenticated]);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    // Optionally clear data on logout
+    setMessages([]);
+    setGeneratedEmails([]);
+    setGeminiApiKey(null);
+  };
 
   const handleAddMessage = (message: RawMessage) => {
     setMessages(prev => [...prev, message]);
@@ -102,17 +118,30 @@ function App() {
     { id: 'settings' as TabType, label: 'Settings', icon: SettingsIcon },
   ];
 
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Weekly Update Generator
-          </h1>
-          <p className="text-gray-600">
-            Collect your weekly messages and generate professional update emails using AI
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Weekly Update Generator
+            </h1>
+            <p className="text-gray-600">
+              Collect your weekly messages and generate professional update emails using AI
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-colors"
+          >
+            <LogOut className="mr-2" size={16} />
+            Logout
+          </button>
         </div>
 
         {/* Navigation Tabs */}
