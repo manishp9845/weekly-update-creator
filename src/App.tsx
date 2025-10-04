@@ -21,7 +21,9 @@ import './App.css';
 type TabType = 'messages' | 'generate' | 'history' | 'settings';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!sessionStorage.getItem('userId')
+  );
   const [activeTab, setActiveTab] = useState<TabType>('messages');
   const [messages, setMessages] = useState<RawMessage[]>([]);
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
@@ -64,11 +66,13 @@ function App() {
     saveEmails();
   }, [generatedEmails, isAuthenticated]);
 
-  const handleLogin = () => {
+  const handleLogin = (userId: number) => {
+    sessionStorage.setItem('userId', String(userId));
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('userId');
     setIsAuthenticated(false);
     // Optionally clear data on logout
     setMessages([]);
