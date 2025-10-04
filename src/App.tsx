@@ -21,25 +21,43 @@ type TabType = 'messages' | 'generate' | 'history' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('messages');
+  console.log('App.tsx: Current activeTab:', activeTab);
   const [messages, setMessages] = useState<RawMessage[]>([]);
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
   const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
 
   // Load data on component mount
   useEffect(() => {
-    setMessages(loadRawMessages());
-    setGeneratedEmails(loadGeneratedEmails());
-    setGeminiApiKey(loadGeminiApiKey());
+    const loadInitialData = async () => {
+      try {
+        const loadedMessages = await loadRawMessages();
+        setMessages(loadedMessages);
+
+        const loadedEmails = await loadGeneratedEmails();
+        setGeneratedEmails(loadedEmails);
+
+        setGeminiApiKey(loadGeminiApiKey());
+      } catch (error) {
+        console.error('App.tsx: Error loading initial data:', error);
+      }
+    };
+    loadInitialData();
   }, []);
 
   // Save messages when they change
   useEffect(() => {
-    saveRawMessages(messages);
+    const saveMessages = async () => {
+      await saveRawMessages(messages);
+    };
+    saveMessages();
   }, [messages]);
 
   // Save emails when they change
   useEffect(() => {
-    saveGeneratedEmails(generatedEmails);
+    const saveEmails = async () => {
+      await saveGeneratedEmails(generatedEmails);
+    };
+    saveEmails();
   }, [generatedEmails]);
 
   const handleAddMessage = (message: RawMessage) => {

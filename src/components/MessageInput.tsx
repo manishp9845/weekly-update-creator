@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Save } from 'lucide-react';
 import { RawMessage } from '../types';
 import { getCurrentWeek } from '../utils/dateUtils';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
 
 interface MessageInputProps {
   onAddMessage: (message: RawMessage) => void;
@@ -15,7 +16,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onAddMessage }) => {
     e.preventDefault();
     if (content.trim()) {
       const newMessage: RawMessage = {
-        id: Date.now().toString(),
+        id: uuidv4(), // Use uuidv4() for unique ID
         content: content.trim(),
         timestamp: new Date(),
         weekOf: getCurrentWeek(),
