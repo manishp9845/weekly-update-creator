@@ -1,26 +1,68 @@
 import React, { useState } from 'react';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (userId: number) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd have signup/login logic here.
-    // For now, we'll just call onLogin to simulate a successful login.
-    if (isLogin) {
-      onLogin();
-    } else {
-      // Simulate a signup and then login
-      console.log('Simulating signup for:', username);
-      onLogin();
+    setError('');
+
+    const url = isLogin
+      ? 'http://localhost:3001/login'
+      : 'http://localhost:3001/signup';
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (response.ok) {
+        if (isLogin) {
+          const data = await response.json();
+          onLogin(data.userId);
+        } else {
+          // Automatically log in after successful signup
+          const loginResponse = await fetch('http://localhost:3001/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+          });
+          if (loginResponse.ok) {
+            const loginData = await loginResponse.json();
+            onLogin(loginData.userId);
+          } else {
+            const errorData = await loginResponse.json();
+            setError(errorData.error || 'Login failed after signup.');
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'An unknown error occurred.');
+      }
+    } catch (err) {
+      setError('Failed to connect to the server.');
     }
   };
+
+  const toggleForm = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setUsername('');
+    setPassword('');
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -29,6 +71,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {isLogin ? 'Login' : 'Sign Up'}
         </h2>
         <form className="space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-400 rounded-md">
+              {error}
+            </div>
+          )}
           <div>
             <label
               htmlFor="username"
@@ -76,7 +123,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           {isLogin ? "Don't have an account?" : 'Already have an account?'}
           <button
             className="ml-1 font-medium text-blue-600 hover:underline"
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={toggleForm}
           >
             {isLogin ? 'Sign Up' : 'Login'}
           </button>
