@@ -10,12 +10,24 @@ interface MessageListProps {
   selectedWeek?: string;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ 
-  messages, 
-  onDeleteMessage, 
-  selectedWeek 
+export const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  onDeleteMessage,
+  selectedWeek
 }) => {
-  const filteredMessages = selectedWeek 
+  console.log('MessageList.tsx: Messages prop on render:', messages);
+  // Temporarily display raw messages prop (Debug)
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-lg font-semibold mb-4">Raw Messages Prop (Debug)</h3>
+      <pre className="whitespace-pre-wrap text-sm">
+        {JSON.stringify(messages, null, 2)}
+      </pre>
+    </div>
+  );
+
+  /* Original rendering logic commented out
+  const filteredMessages = selectedWeek
     ? messages.filter(msg => msg.weekOf === selectedWeek)
     : messages;
 
@@ -35,7 +47,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4">Messages</h3>
         <div className="text-center py-8 text-gray-500">
-          {selectedWeek 
+          {selectedWeek
             ? `No messages found for week of ${formatWeekRange(selectedWeek)}`
             : 'No messages yet. Add some messages to get started!'
           }
@@ -49,7 +61,7 @@ export const MessageList: React.FC<MessageListProps> = ({
       <h3 className="text-lg font-semibold mb-4">
         Messages {selectedWeek && `- ${formatWeekRange(selectedWeek)}`}
       </h3>
-      
+
       <div className="space-y-6">
         {sortedWeeks.map(week => (
           <div key={week} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
@@ -62,7 +74,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                 {groupedMessages[week].length} message{groupedMessages[week].length !== 1 ? 's' : ''}
               </span>
             </div>
-            
+
             <div className="space-y-3">
               {groupedMessages[week]
                 .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -92,4 +104,5 @@ export const MessageList: React.FC<MessageListProps> = ({
       </div>
     </div>
   );
+  */
 };
