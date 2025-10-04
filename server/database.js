@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema({
 const messageSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   content: { type: String, required: true },
+  tag: {
+    type: String,
+    required: true,
+    enum: ['win', 'challenge', 'never settle', 'upcoming']
+  },
   timestamp: { type: Date, default: Date.now }
 });
 

@@ -7,9 +7,8 @@ import { EmailHistory } from './components/EmailHistory';
 import { Settings } from './components/Settings';
 import { LoginPage } from './components/LoginPage';
 import { RawMessage, GeneratedEmail } from './types';
+import { getMessages, addMessage, deleteMessage as apiDeleteMessage } from './services/messageService';
 import {
-  saveRawMessages,
-  loadRawMessages,
   saveGeneratedEmails,
   loadGeneratedEmails,
   saveGeminiApiKey,
@@ -34,7 +33,7 @@ function App() {
     if (!isAuthenticated) return;
     const loadInitialData = async () => {
       try {
-        const loadedMessages = await loadRawMessages();
+        const loadedMessages = await getMessages();
         setMessages(loadedMessages);
 
         const loadedEmails = await loadGeneratedEmails();
@@ -47,15 +46,6 @@ function App() {
     };
     loadInitialData();
   }, [isAuthenticated]);
-
-  // Save messages when they change
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const saveMessages = async () => {
-      await saveRawMessages(messages);
-    };
-    saveMessages();
-  }, [messages, isAuthenticated]);
 
   // Save emails when they change
   useEffect(() => {
@@ -80,12 +70,24 @@ function App() {
     setGeminiApiKey(null);
   };
 
-  const handleAddMessage = (message: RawMessage) => {
-    setMessages(prev => [...prev, message]);
+  const handleAddMessage = async (message: Omit<RawMessage, '_id' | 'id' | 'timestamp' | 'weekOf'>) => {
+    try {
+      const newMessage = await addMessage(message);
+      setMessages(prev => [newMessage, ...prev]);
+    } catch (error) {
+      console.error('Failed to add message:', error);
+      // Optionally show an error to the user
+    }
   };
 
-  const handleDeleteMessage = (id: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== id));
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await apiDeleteMessage(id);
+      setMessages(prev => prev.filter(msg => msg._id !== id));
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      // Optionally show an error to the user
+    }
   };
 
   const handleEmailGenerated = (email: GeneratedEmail) => {

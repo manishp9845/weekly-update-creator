@@ -1,8 +1,13 @@
+export type MessageTag = 'win' | 'challenge' | 'never settle' | 'upcoming';
+
 export interface RawMessage {
-  id: string;
+  _id?: string; // from MongoDB
+  id?: string; // from frontend before saving
   content: string;
+  tag: MessageTag;
   timestamp: Date;
   weekOf: string; // YYYY-MM-DD format for the Monday of the week
+  userId?: string; // The user who created it
 }
 
 export interface GeneratedEmail {

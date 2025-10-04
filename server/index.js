@@ -63,17 +63,20 @@ app.post('/login', async (req, res) => {
 
 // Post a new message
 app.post('/messages', async (req, res) => {
-  const { userId, content } = req.body;
+  const { userId, content, tag } = req.body;
 
-  if (!userId || !content) {
-    return res.status(400).json({ error: 'userId and content are required' });
+  if (!userId || !content || !tag) {
+    return res.status(400).json({ error: 'userId, content, and tag are required' });
   }
 
   try {
-    const newMessage = new Message({ userId, content });
+    const newMessage = new Message({ userId, content, tag });
     await newMessage.save();
     res.status(201).json(newMessage);
   } catch (err) {
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 });
@@ -81,12 +84,25 @@ app.post('/messages', async (req, res) => {
 // Get all messages
 app.get('/messages', async (req, res) => {
   try {
-    const messages = await Message.find().populate('userId', 'username');
+    const messages = await Message.find().sort({ timestamp: -1 }).populate('userId', 'username');
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Delete a message
+app.delete('/messages/:id', async (req, res) => {
+    try {
+      const message = await Message.findByIdAndDelete(req.params.id);
+      if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      res.json({ message: 'Message deleted successfully' });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
