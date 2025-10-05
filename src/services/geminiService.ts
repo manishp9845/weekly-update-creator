@@ -54,19 +54,17 @@ Return the response in the following JSON format:
 `;
   }
 
-  private createMonthlyPrompt(weeklyEmails: GeneratedEmail[], monthOf: string): string {
-    const monthRange = formatMonthRange(monthOf);
-    const weeklyContents = weeklyEmails.map((email, index) => 
-      `Week ${index + 1} (${email.weekOf ? formatWeekRange(email.weekOf) : 'Unknown'}):\n${email.content}`
-    ).join('\n\n---\n\n');
+private createMonthlyPrompt(messages: RawMessage[], monthOf: string): string {
+  const monthRange = formatMonthRange(monthOf);
+  const messagesText = messages.map(msg => msg.content).join('\n\n---\n\n');
 
-    return `
+  return `
 You are an AI assistant helping to generate a comprehensive monthly update email.
 
-Based on the following weekly update emails from ${monthRange}, please generate a consolidated monthly update that summarizes the entire month's activities.
+Based on the following raw messages and notes from ${monthRange}, please generate a consolidated monthly update that summarizes the entire month's activities.
 
-Weekly updates:
-${weeklyContents}
+Raw messages and notes:
+${messagesText}
 
 Please create a monthly summary that:
 1. Consolidates major wins and achievements across all weeks
@@ -87,7 +85,7 @@ Return the response in the following JSON format:
   }
 }
 `;
-  }
+}
 
   async generateWeeklyEmail(messages: RawMessage[], weekOf: string): Promise<{ subject: string; content: string; sections: EmailSection }> {
     if (!this.model) {
@@ -134,13 +132,13 @@ Return the response in the following JSON format:
     }
   }
 
-  async generateMonthlyEmail(weeklyEmails: GeneratedEmail[], monthOf: string): Promise<{ subject: string; content: string; sections: EmailSection }> {
-    if (!this.model) {
-      throw new Error('Gemini API not initialized. Please provide an API key.');
-    }
+async generateMonthlyEmail(messages: RawMessage[], monthOf: string) {
+  if (!this.model) {
+    throw new Error('Gemini API not initialized. Please provide an API key.');
+  }
 
-    const prompt = this.createMonthlyPrompt(weeklyEmails, monthOf);
-    
+  const prompt = this.createMonthlyPrompt(messages, monthOf);
+   
     try {
       const result = await this.model.generateContent(prompt);
       const response = await result.response;

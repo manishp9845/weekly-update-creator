@@ -22,8 +22,13 @@ export const formatMonthRange = (monthOf: string): string => {
   return format(date, 'MMMM yyyy');
 };
 
-export const getCurrentWeek = (): string => {
-  return getWeekOf(new Date());
+export function getCurrentWeek(date?: Date): string {
+  const d = date ?? new Date();
+  const start = new Date(d);
+  start.setDate(d.getDate() - d.getDay()); // Sunday
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6); // Saturday
+  return `${start.toISOString().slice(0, 10)}_${end.toISOString().slice(0, 10)}`;
 };
 
 export const getCurrentMonth = (): string => {

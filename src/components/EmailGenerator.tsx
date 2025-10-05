@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Calendar, Loader2, Sparkles } from 'lucide-react';
 import { RawMessage, GeneratedEmail } from '../types';
 import { GeminiService } from '../services/geminiService';
-import { getCurrentWeek, getCurrentMonth, formatWeekRange } from '../utils/dateUtils';
+import { getWeekOf, getMonthOf, formatWeekRange, formatMonthRange, getCurrentWeek, getCurrentMonth } from '../utils/dateUtils';
 
 interface EmailGeneratorProps {
   messages: RawMessage[];
@@ -18,24 +18,30 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
   geminiApiKey,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeek());
+  const [selectedWeek, setSelectedWeek] = useState(getWeekOf(new Date()));
   const [error, setError] = useState<string | null>(null);
 
   const currentMonth = getCurrentMonth();
   
-  // Get unique weeks from messages
+  // Derive weekOf for each message if missing
+  const messagesWithWeekOf = messages.map(msg => ({
+    ...msg,
+    weekOf: msg.weekOf ?? getWeekOf(new Date(msg.timestamp)),
+  }));
+
+  // Use messagesWithWeekOf everywhere instead of messages
   const availableWeeks = Array.from(
-    new Set(messages.map(msg => msg.weekOf))
+    new Set(messagesWithWeekOf.map(msg => msg.weekOf).filter((w): w is string => !!w))
   ).sort().reverse();
 
   // Get weekly emails for current month
-  const currentMonthWeeklyEmails = generatedEmails.filter(
-    email => email.type === 'weekly' && 
-    email.weekOf && 
-    email.weekOf.startsWith(currentMonth.replace('-', '-'))
-  );
+const messagesForCurrentMonth = messagesWithWeekOf.filter(
+  msg => getMonthOf(new Date(msg.weekOf)) === currentMonth
+);
 
-  const messagesForSelectedWeek = messages.filter(msg => msg.weekOf === selectedWeek);
+ 
+  const messagesForSelectedWeek = messagesWithWeekOf.filter(msg => msg.weekOf === selectedWeek);
+
 
   const handleGenerateWeekly = async () => {
     console.log('API Key available:', !!geminiApiKey);
@@ -68,7 +74,9 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
         content: result.content,
         generatedAt: new Date(),
         weekOf: selectedWeek,
-        rawMessageIds: messagesForSelectedWeek.map(msg => msg._id).filter((id): id is string => !!id),
+        rawMessageIds: messagesForSelectedWeek
+          .map(msg => msg._id)
+          .filter((id): id is string => typeof id === 'string'),
       };
 
       onEmailGenerated(newEmail);
@@ -85,27 +93,27 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
       return;
     }
 
-    if (currentMonthWeeklyEmails.length === 0) {
-      setError('No weekly emails found for the current month.');
-      return;
-    }
+  if (messagesForCurrentMonth.length === 0) {
+    setError('No messages found for the current month.');
+    return;
+  }
 
     setIsGenerating(true);
     setError(null);
 
     try {
       const geminiService = new GeminiService(geminiApiKey);
-      const result = await geminiService.generateMonthlyEmail(currentMonthWeeklyEmails, currentMonth);
+      const result = await geminiService.generateMonthlyEmail(messagesForCurrentMonth, currentMonth);
       
-      const newEmail: GeneratedEmail = {
-        id: Date.now().toString(),
-        type: 'monthly',
-        subject: result.subject,
-        content: result.content,
-        generatedAt: new Date(),
-        monthOf: currentMonth,
-        rawMessageIds: currentMonthWeeklyEmails.flatMap(email => email.rawMessageIds),
-      };
+    const newEmail: GeneratedEmail = {
+      id: Date.now().toString(),
+      type: 'monthly',
+      subject: result.subject,
+      content: result.content,
+      generatedAt: new Date(),
+      monthOf: currentMonth,
+      rawMessageIds: messagesForCurrentMonth.map(msg => msg._id),
+    };
 
       onEmailGenerated(newEmail);
     } catch (err) {
@@ -152,7 +160,7 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
           >
             {availableWeeks.map(week => (
               <option key={week} value={week}>
-                {formatWeekRange(week)} ({messages.filter(msg => msg.weekOf === week).length} messages)
+                {formatWeekRange(week)} ({messagesWithWeekOf.filter(msg => msg.weekOf === week).length} messages)
               </option>
             ))}
           </select>
@@ -186,20 +194,20 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
         
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {currentMonthWeeklyEmails.length} weekly email{currentMonthWeeklyEmails.length !== 1 ? 's' : ''} for {currentMonth}
-          </div>
-          <button
-            onClick={handleGenerateMonthly}
-            disabled={isGenerating || !geminiApiKey || currentMonthWeeklyEmails.length === 0}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-          >
-            {isGenerating ? (
-              <Loader2 className="mr-2 animate-spin" size={16} />
-            ) : (
-              <Mail className="mr-2" size={16} />
-            )}
-            Generate Monthly Email
-          </button>
+  {messagesForCurrentMonth.length} message{messagesForCurrentMonth.length !== 1 ? 's' : ''} for {currentMonth}
+</div>
+<button
+  onClick={handleGenerateMonthly}
+  disabled={isGenerating || !geminiApiKey || messagesForCurrentMonth.length === 0}
+  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+>
+  {isGenerating ? (
+    <Loader2 className="mr-2 animate-spin" size={16} />
+  ) : (
+    <Mail className="mr-2" size={16} />
+  )}
+  Generate Monthly Email
+</button>
         </div>
       </div>
     </div>

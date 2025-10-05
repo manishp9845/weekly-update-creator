@@ -26,6 +26,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onAddMessage }) => {
       }
 
       const newMessage = {
+        _id: uuidv4(),
         content: content.trim(),
         tag: selectedTag,
         userId,
