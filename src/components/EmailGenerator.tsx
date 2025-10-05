@@ -68,7 +68,7 @@ export const EmailGenerator: React.FC<EmailGeneratorProps> = ({
         content: result.content,
         generatedAt: new Date(),
         weekOf: selectedWeek,
-        rawMessageIds: messagesForSelectedWeek.map(msg => msg.id),
+        rawMessageIds: messagesForSelectedWeek.map(msg => msg._id).filter((id): id is string => !!id),
       };
 
       onEmailGenerated(newEmail);
