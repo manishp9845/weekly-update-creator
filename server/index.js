@@ -113,7 +113,9 @@ app.delete('/messages/:id', async (req, res) => {
 
 // 🟡 ---- Serve React Build (if full-stack) ----
 app.use(express.static(path.join(__dirname, '../build')));
-app.get('*', (req, res) => {
+
+// Fix for Express 5: use "/*" instead of "*"
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
