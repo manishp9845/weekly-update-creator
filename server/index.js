@@ -2,13 +2,18 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const { User, Message } = require('./database.js');
 
 const app = express();
-const port = 3001;
+
+// ✅ Use Render’s dynamic port (fallback to 3001 locally)
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// 🟢 ---- API Routes ----
 
 // Signup endpoint
 app.post('/signup', async (req, res) => {
@@ -75,7 +80,7 @@ app.post('/messages', async (req, res) => {
     res.status(201).json(newMessage);
   } catch (err) {
     if (err.name === 'ValidationError') {
-        return res.status(400).json({ error: err.message });
+      return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: err.message });
   }
@@ -84,7 +89,9 @@ app.post('/messages', async (req, res) => {
 // Get all messages
 app.get('/messages', async (req, res) => {
   try {
-    const messages = await Message.find().sort({ timestamp: -1 }).populate('userId', 'username');
+    const messages = await Message.find()
+      .sort({ timestamp: -1 })
+      .populate('userId', 'username');
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -93,17 +100,24 @@ app.get('/messages', async (req, res) => {
 
 // Delete a message
 app.delete('/messages/:id', async (req, res) => {
-    try {
-      const message = await Message.findByIdAndDelete(req.params.id);
-      if (!message) {
-        return res.status(404).json({ error: 'Message not found' });
-      }
-      res.json({ message: 'Message deleted successfully' });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+  try {
+    const message = await Message.findByIdAndDelete(req.params.id);
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
     }
-  });
+    res.json({ message: 'Message deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+// 🟡 ---- Serve React Build (if full-stack) ----
+app.use(express.static(path.join(__dirname, '../build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+// 🟢 ---- Start Server ----
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
