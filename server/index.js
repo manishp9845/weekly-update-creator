@@ -120,6 +120,7 @@ app.use((req, res) => {
 });
 
 // 🟢 ---- Start Server ----
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server running on port ${PORT}`);
+const port = process.env.PORT || 3001; // Use Render's port if available
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
