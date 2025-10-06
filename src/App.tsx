@@ -20,6 +20,7 @@ import './App.css';
 type TabType = 'messages' | 'generate' | 'history' | 'settings';
 
 function App() {
+  
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!sessionStorage.getItem('userId')
   );
@@ -28,6 +29,10 @@ function App() {
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
   const [geminiApiKey, setGeminiApiKey] = useState<string | null>(null);
 
+    useEffect(() => {
+    document.title = "Weekly update generator from React APP";
+  }, []);
+  
   // Load data on component mount
   useEffect(() => {
     if (!isAuthenticated) return;
